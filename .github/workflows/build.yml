@@ -1,65 +1,41 @@
 name: CI
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-20.04
 
     steps:
+      # Checkout the repository
       - uses: actions/checkout@v2
 
-      # Used to cache dependencies with a timeout
-      - name: Get Date
-        id: get-date
-        run: |
-          echo "::set-output name=date::$(/bin/date -u "+%Y%m%d")"
-        shell: bash
-
+      # Cache Buildozer global directory
       - name: Cache Buildozer global directory
         uses: actions/cache@v2
         with:
           path: .buildozer_global
-          key: buildozer-global-${{ hashFiles('buildozer.spec') }} # Replace with your path
+          key: buildozer-global-${{ hashFiles('buildozer.spec') }}
 
+      # Cache Buildozer local directory
       - uses: actions/cache@v2
         with:
           path: .buildozer
-          key: ${{ runner.os }}-${{ steps.get-date.outputs.date }}-${{ hashFiles('buildozer.spec') }}
+          key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
 
-      - name: Build with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer
-        with:
-          command: buildozer android debug
-          buildozer_version: stable
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: package
-          path: ${{ steps.buildozer.outputs.filename }}
-
-      - name: Publish test results
-        uses: actions/upload-artifact@v3
-        with:
-          name: report
-          path: robot/tests/report.html
-
-      - name: Build with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
-        with:
-          command: buildozer android debug
-          buildozer_version: stable
-
-      - name: Build with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v2
-
-
-      - uses: actions/checkout@v2
-
-      - name: Build with Buildozer
+      # Use Docker to build the app with Buildozer
+      - name: Build with Buildozer (via Docker)
         run: |
-          docker run --rm -v $(pwd):/home/user/hostcwd kivy/buildozer:4.0.0 buildozer android debug
+          docker run --rm \
+          -v $(pwd):/home/user/hostcwd \
+          -w /home/user/hostcwd \
+          kivy/buildozer:4.0.0 \
+          buildozer android debug
 
+      # Upload the built APK as an artifact
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: apk-package
+          path: bin/*.apk # Adjust this path based on your Buildozer configuration
