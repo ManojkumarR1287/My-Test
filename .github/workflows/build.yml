@@ -40,3 +40,9 @@ jobs:
         with:
           name: package
           path: ${{ steps.buildozer.outputs.filename }}
+
+      - name: publish test results
+        uses: actions/upload-artifact@v1
+        with:
+          name: report
+          path: robot/tests/report.html
