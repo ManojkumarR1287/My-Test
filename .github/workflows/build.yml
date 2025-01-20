@@ -53,3 +53,6 @@ jobs:
           command: buildozer android debug
           buildozer_version: stable
 
+      - name: Build with Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v2
+
