@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      #used to cache dependencies with a timeout
+      # Used to cache dependencies with a timeout
       - name: Get Date
         id: get-date
         run: |
@@ -36,13 +36,13 @@ jobs:
           buildozer_version: stable
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: package
           path: ${{ steps.buildozer.outputs.filename }}
 
-      - name: publish test results
-        uses: actions/upload-artifact@v1
+      - name: Publish test results
+        uses: actions/upload-artifact@v3
         with:
           name: report
           path: robot/tests/report.html
