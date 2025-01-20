@@ -11,9 +11,11 @@ jobs:
       # Checkout the repository
       - uses: actions/checkout@v2
 
-      # Check Docker version
-      - name: Check Docker Version
-        run: docker --version
+      # Check Docker version and info
+      - name: Check Docker Installation
+        run: |
+          docker --version
+          docker info
 
       # Cache Buildozer global directory
       - name: Cache Buildozer global directory
@@ -28,11 +30,16 @@ jobs:
           path: .buildozer
           key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
 
+      # Check if the Docker image can be pulled
+      - name: Check Docker Image
+        run: docker pull kivy/buildozer:4.0.0 || docker pull kivy/buildozer:latest
+
       # Use Docker to build the app with Buildozer
       - name: Build with Buildozer (via Docker)
         run: |
+          export DOCKER_CLI_EXPERIMENTAL=enabled
           docker run --rm \
-          -v $(pwd):/home/user/hostcwd \
+          -v /home/runner/work/${{ github.repository }}:/home/user/hostcwd \
           -w /home/user/hostcwd \
           kivy/buildozer:4.0.0 \
           buildozer android debug
