@@ -11,6 +11,10 @@ jobs:
       # Checkout the repository
       - uses: actions/checkout@v2
 
+      # Check Docker version
+      - name: Check Docker Version
+        run: docker --version
+
       # Cache Buildozer global directory
       - name: Cache Buildozer global directory
         uses: actions/cache@v2
@@ -33,9 +37,9 @@ jobs:
           kivy/buildozer:4.0.0 \
           buildozer android debug
 
-      # Upload the built APK as an artifact
+      # Upload APK artifact
       - name: Upload APK artifact
         uses: actions/upload-artifact@v3
         with:
           name: apk-package
-          path: bin/*.apk # Adjust this path based on your Buildozer configuration
+          path: bin/*.apk # Adjust the path if your APK is located elsewhere
