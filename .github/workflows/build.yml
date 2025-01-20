@@ -56,3 +56,10 @@ jobs:
       - name: Build with Buildozer
         uses: ArtemSBulgakov/buildozer-action@v2
 
+
+      - uses: actions/checkout@v2
+
+      - name: Build with Buildozer
+        run: |
+          docker run --rm -v $(pwd):/home/user/hostcwd kivy/buildozer:4.0.0 buildozer android debug
+
