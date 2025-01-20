@@ -16,11 +16,15 @@ jobs:
         run: |
           docker --version
           docker info
-
+      - name: Test Docker Image Interactively
+        run: |
+          docker run -it --rm kivy/buildozer:4.0.0 /bin/bash
+          
       # Check if Docker image can be pulled
       - name: Pull Docker Image
         run: |
           docker pull kivy/buildozer:4.0.0 || docker pull kivy/buildozer:latest
+  
 
       # Cache Buildozer global directory
       - name: Cache Buildozer global directory
