@@ -37,10 +37,13 @@ jobs:
           # Move the extracted tools to the 'latest' folder
           mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
 
-          # Install required SDK components, including Build Tools and AIDL tool
+          # Accept SDK licenses and install necessary Build Tools and AIDL
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;30.0.3" "platform-tools" "platforms;android-31" "build-tools;30.0.3"
-
+          
+          # Accept licenses explicitly and install the correct Build Tools version
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "build-tools;30.0.3" "platform-tools" "platforms;android-31"
+          
       # Step 2: Cache Buildozer directories
       - name: Cache Buildozer directories
         uses: actions/cache@v4
