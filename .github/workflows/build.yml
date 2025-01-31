@@ -11,14 +11,24 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Step 1: Install dependencies (including Android SDK & AIDL tool)
+      # Step 1: Install dependencies (including Android SDK and Build Tools)
       - name: Install dependencies
         run: |
           sudo apt update
           sudo apt install -y python3 python3-pip python3-venv git zip unzip openjdk-17-jdk \
-            android-sdk android-sdk-platform-tools android-sdk-build-tools
+            wget curl
           pip3 install --upgrade pip
           pip3 install --upgrade buildozer cython virtualenv
+
+          # Install Android SDK command line tools (SDK Manager)
+          wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
+          unzip commandlinetools-linux-8512546_latest.zip -d $HOME/android-sdk
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
+
+          # Accept licenses and install required components
+          yes | sdkmanager --licenses
+          sdkmanager "build-tools;30.0.3" "platform-tools" "platforms;android-31" "tools"
 
       # Step 2: Cache Buildozer directories
       - name: Cache Buildozer directories
@@ -29,7 +39,7 @@ jobs:
             ~/.buildozer
           key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
 
-      # Step 3: Fix network issues (IPv6 disable)
+      # Step 3: Fix Network Issues (IPv6 Disable)
       - name: Fix Network Issues
         run: |
           sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
