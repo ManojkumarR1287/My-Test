@@ -15,20 +15,21 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3 python3-pip python3-venv git zip unzip openjdk-17-jdk \
-            wget curl
-          pip3 install --upgrade pip
-          pip3 install --upgrade buildozer cython virtualenv
+          sudo apt install -y python3 python3-pip python3-venv git zip unzip openjdk-17-jdk wget curl
 
           # Install Android SDK command line tools (SDK Manager)
           wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
           unzip commandlinetools-linux-8512546_latest.zip -d $HOME/android-sdk
+
+          # Set environment variables
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "PATH=$PATH" >> $GITHUB_ENV
 
-          # Accept licenses and install required components
-          yes | sdkmanager --licenses
-          sdkmanager "build-tools;30.0.3" "platform-tools" "platforms;android-31" "tools"
+          # Install required SDK components
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;30.0.3" "platform-tools" "platforms;android-31"
 
       # Step 2: Cache Buildozer directories
       - name: Cache Buildozer directories
