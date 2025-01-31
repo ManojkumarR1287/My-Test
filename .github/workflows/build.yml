@@ -69,3 +69,20 @@ jobs:
         with:
           name: package
           path: bin/*
+
+      # Post Cleanup Step
+      - name: Post-job Cleanup
+        run: |
+          # Remove temporary files or directories (e.g., android-sdk, commandlinetools)
+          rm -rf $HOME/android-sdk
+
+          # Clear Buildozer cache if desired
+          rm -rf ~/.buildozer
+
+          # Reset environment variables
+          unset ANDROID_HOME
+          unset PATH
+
+          # Optionally remove any other specific temp files created during the build
+          rm -rf /home/runner/work/_temp/*
+          echo "Post-job cleanup completed!"
