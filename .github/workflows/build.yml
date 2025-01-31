@@ -11,15 +11,39 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Install dependencies and setup (as per previous configuration)
+      # Step 1: Install dependencies (including Python, Buildozer, Android SDK, and Build Tools)
       - name: Install dependencies
         run: |
           sudo apt update
           sudo apt install -y python3 python3-pip python3-venv git zip unzip openjdk-17-jdk wget curl
+
+          # Install Buildozer and dependencies
           pip3 install --upgrade pip
           pip3 install buildozer cython virtualenv
 
-      # Step 1: Cache Buildozer directories
+          # Create necessary directories for Android SDK
+          mkdir -p $HOME/android-sdk/cmdline-tools
+
+          # Install Android SDK command line tools (SDK Manager)
+          wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
+          unzip commandlinetools-linux-8512546_latest.zip -d $HOME/android-sdk/cmdline-tools
+
+          # Set environment variables
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "PATH=$PATH" >> $GITHUB_ENV
+
+          # Move the extracted tools to the 'latest' folder
+          mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
+
+          # Accept SDK licenses and install Build Tools (Stable versions)
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+
+          # Install stable versions of Build Tools and SDK platforms (Force installing 30.0.3)
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;30.0.3" "platform-tools" "platforms;android-31"
+
+      # Step 2: Cache Buildozer directories
       - name: Cache Buildozer directories
         uses: actions/cache@v4
         with:
@@ -28,18 +52,25 @@ jobs:
             ~/.buildozer
           key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
 
-      # Step 2: Build with Buildozer
+      # Step 3: Fix Network Issues (IPv6 Disable)
+      - name: Fix Network Issues
+        run: |
+          sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+          sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
+          sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1
+
+      # Step 4: Build with Buildozer
       - name: Build with Buildozer
         run: buildozer android debug
 
-      # Step 3: Upload artifacts (APK files)
+      # Step 5: Upload artifacts (APK files)
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: package
           path: bin/*
 
-      # Step 4: Clean up orphan processes and files
+      # Step 6: Clean up orphan processes
       - name: Clean up orphan processes
         run: |
           echo "Checking for orphan processes..."
