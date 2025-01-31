@@ -40,8 +40,11 @@ jobs:
           # Accept SDK licenses and install Build Tools (Stable versions)
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           
-          # Install stable versions of Build Tools and SDK platforms
+          # Install stable versions of Build Tools and SDK platforms (Force installing 30.0.3)
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;30.0.3" "platform-tools" "platforms;android-31"
+
+          # Install AIDL tools explicitly
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "tools;android-ndk-r21d"
 
       # Step 2: Cache Buildozer directories
       - name: Cache Buildozer directories
