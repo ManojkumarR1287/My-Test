@@ -19,6 +19,9 @@ jobs:
 
           # Install Android SDK command line tools (SDK Manager)
           wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
+          
+          # Create necessary directories for SDK tools
+          mkdir -p $HOME/android-sdk/cmdline-tools
           unzip commandlinetools-linux-8512546_latest.zip -d $HOME/android-sdk/cmdline-tools
 
           # Set environment variables
