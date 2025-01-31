@@ -1,61 +1,43 @@
 name: CI
 on:
   push:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-20.04
 
     steps:
-      # Checkout the repository
-      - uses: actions/checkout@v2
+      - name: Checkout Repository
+        uses: actions/checkout@v2
 
-      # Check Docker version and info
-      - name: Check Docker Installation
-        run: |
-          docker --version
-          docker info
-      - name: Test Docker Image Interactively
-        run: |
-          docker run -it --rm kivy/buildozer:4.0.0 /bin/bash
-          
-      # Check if Docker image can be pulled
-      - name: Pull Docker Image
-        run: |
-          docker pull kivy/buildozer:4.0.0 || docker pull kivy/buildozer:latest
-  
+      # Used to cache dependencies with a timeout
+      - name: Get Date
+        id: get-date
+        run: echo "DATE=$(date -u '+%Y%m%d')" >> $GITHUB_ENV
+        shell: bash
 
-      # Cache Buildozer global directory
       - name: Cache Buildozer global directory
-        uses: actions/cache@v3
+        uses: actions/cache@v2
         with:
           path: .buildozer_global
           key: buildozer-global-${{ hashFiles('buildozer.spec') }}
 
-      # Cache Buildozer local directory
-      - uses: actions/cache@v3
+      - name: Cache Buildozer build directory
+        uses: actions/cache@v2
         with:
           path: .buildozer
-          key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
+          key: ${{ runner.os }}-${{ env.DATE }}-${{ hashFiles('buildozer.spec') }}
 
-      # Run Docker interactively to check dependencies
-      - name: Test Docker Image Interactively
-        run: |
-          docker run -it --rm kivy/buildozer:4.0.0 /bin/bash
-
-      # Build with Buildozer (via Docker)
-      - name: Build with Buildozer (via Docker)
-        run: |
-          docker run -i --rm \
-          -v /home/runner/work/${{ github.repository }}:/home/user/hostcwd \
-          -w /home/user/hostcwd \
-          kivy/buildozer:4.0.0 \
-          buildozer android debug
-
-      # Upload APK artifact
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v3
+      - name: Build with Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
         with:
-          name: apk-package
-          path: bin/*.apk # Adjust the path if your APK is located elsewhere
+          command: android debug
+          buildozer_version: stable
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: package
+          path: ${{ github.workspace }}/bin/*
