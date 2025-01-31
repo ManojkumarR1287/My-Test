@@ -11,14 +11,16 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # Step 1: Install dependencies (including Android SDK & AIDL tool)
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3 python3-pip python3-venv git zip unzip openjdk-17-jdk
+          sudo apt install -y python3 python3-pip python3-venv git zip unzip openjdk-17-jdk \
+            android-sdk android-sdk-platform-tools android-sdk-build-tools
           pip3 install --upgrade pip
           pip3 install --upgrade buildozer cython virtualenv
 
-
+      # Step 2: Cache Buildozer directories
       - name: Cache Buildozer directories
         uses: actions/cache@v4
         with:
@@ -27,22 +29,20 @@ jobs:
             ~/.buildozer
           key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
 
-      - name: Build with Buildozer
-        run: buildozer android debug
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: package
-          path: bin/*
-          
+      # Step 3: Fix network issues (IPv6 disable)
       - name: Fix Network Issues
         run: |
           sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
           sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
           sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1
-          
-      - name: Install AIDL Tool
-        run: |
-          sudo apt update
-          sudo apt install -y android-sdk android-sdk-platform-tools android-sdk-build-tools
+
+      # Step 4: Build with Buildozer
+      - name: Build with Buildozer
+        run: buildozer android debug
+
+      # Step 5: Upload artifacts (APK files)
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: bin/*
