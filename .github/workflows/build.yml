@@ -11,39 +11,15 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Step 1: Install dependencies (including Python, Buildozer, Android SDK, and Build Tools)
+      # Install dependencies and setup (as per previous configuration)
       - name: Install dependencies
         run: |
           sudo apt update
           sudo apt install -y python3 python3-pip python3-venv git zip unzip openjdk-17-jdk wget curl
-
-          # Install Buildozer and dependencies
           pip3 install --upgrade pip
           pip3 install buildozer cython virtualenv
 
-          # Create necessary directories for Android SDK
-          mkdir -p $HOME/android-sdk/cmdline-tools
-
-          # Install Android SDK command line tools (SDK Manager)
-          wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
-          unzip commandlinetools-linux-8512546_latest.zip -d $HOME/android-sdk/cmdline-tools
-
-          # Set environment variables
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
-          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "PATH=$PATH" >> $GITHUB_ENV
-
-          # Move the extracted tools to the 'latest' folder
-          mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
-
-          # Accept SDK licenses and install Build Tools (Stable versions)
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
-          
-          # Install stable versions of Build Tools and SDK platforms (Force installing 30.0.3)
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;30.0.3" "platform-tools" "platforms;android-31"
-
-      # Step 2: Cache Buildozer directories
+      # Step 1: Cache Buildozer directories
       - name: Cache Buildozer directories
         uses: actions/cache@v4
         with:
@@ -52,37 +28,35 @@ jobs:
             ~/.buildozer
           key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
 
-      # Step 3: Fix Network Issues (IPv6 Disable)
-      - name: Fix Network Issues
-        run: |
-          sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
-          sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
-          sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1
-
-      # Step 4: Build with Buildozer
+      # Step 2: Build with Buildozer
       - name: Build with Buildozer
         run: buildozer android debug
 
-      # Step 5: Upload artifacts (APK files)
+      # Step 3: Upload artifacts (APK files)
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: package
           path: bin/*
 
-      # Post Cleanup Step
-      - name: Post-job Cleanup
+      # Step 4: Clean up orphan processes and files
+      - name: Clean up orphan processes
         run: |
-          # Remove temporary files or directories (e.g., android-sdk, commandlinetools)
-          rm -rf $HOME/android-sdk
+          echo "Checking for orphan processes..."
+          
+          # Identify orphan processes (processes with no parent)
+          orphan_processes=$(ps -eo pid,ppid,state,command | awk '$2 == 1 { print $1 }')
 
-          # Clear Buildozer cache if desired
-          rm -rf ~/.buildozer
+          if [ -n "$orphan_processes" ]; then
+            echo "Found orphan processes, terminating them..."
+            for pid in $orphan_processes; do
+              kill -9 $pid || echo "Failed to terminate process $pid"
+            done
+          else
+            echo "No orphan processes found."
+          fi
 
-          # Reset environment variables
-          unset ANDROID_HOME
-          unset PATH
-
-          # Optionally remove any other specific temp files created during the build
+          # Clean up temporary files (optional)
+          echo "Cleaning up temporary files..."
           rm -rf /home/runner/work/_temp/*
-          echo "Post-job cleanup completed!"
+          echo "Orphan processes cleanup complete!"
